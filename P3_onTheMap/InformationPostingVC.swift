@@ -105,15 +105,7 @@ class InformationPostingVC: UIViewController {
         var student: [String:AnyObject] = [:]
         udacity.getUserInfo()
         
-        // UIControlEvents.TouchUpInside
-        
-        // Alternative to  commented code
-        //findOnMapButton.sendActionsForControlEvents( UIControlEvents.TouchUpInside )
-        
-        
-        // update coords
-        
-        
+        // update coords.  Use closure
         self.searchForLocationDisplayOnMap( {(success, error) -> Void in
             if success {
                 print("attempt point")
@@ -126,38 +118,33 @@ class InformationPostingVC: UIViewController {
                 displayError(self, errorString: "Location data invalid, check your address")
                 return
             }
-        //})
-        
-        
-        // gather user data from view and udacity singleton
-        student["mapString"] = self.locationTextField.text!  //from view
-        student["mediaURL"] = self.linkTextField.text!        //from view
-        student["firstName"] = self.udacity.firstName
-        student["lastName"] = self.udacity.lastName
-        student["uniqueKey"] = self.udacity.userID
-        
-        if let point = self.pointAnnotation {
-            student["longitude"] = point.coordinate.longitude // point would be nil, if not in closure
-            student["latitude"] = point.coordinate.latitude
-        } else {
-            displayError(self, errorString: "Location data invalid, longitude/latitude bad")
-            return
-        }
             
-        
-        
-        
-        self.parse.postLocation(student, completionHandler: {(success, errorString) -> Void in
-            if success {
-                dispatch_async(dispatch_get_main_queue(), {
-                    self.dismissViewControllerAnimated(true, completion: nil)
-                })
+            // gather user data from view and udacity singleton
+            student["mapString"] = self.locationTextField.text!  //from view
+            student["mediaURL"] = self.linkTextField.text!        //from view
+            student["firstName"] = self.udacity.firstName
+            student["lastName"] = self.udacity.lastName
+            student["uniqueKey"] = self.udacity.userID
+            
+            if let point = self.pointAnnotation {
+                student["longitude"] = point.coordinate.longitude // point would be nil, if not in closure
+                student["latitude"] = point.coordinate.latitude
             } else {
-                displayError(self, errorString: errorString)
+                displayError(self, errorString: "Location data invalid, longitude/latitude bad")
+                return
             }
+            
+            // Post Student
+            self.parse.postLocation(student, completionHandler: {(success, errorString) -> Void in
+                if success {
+                    dispatch_async(dispatch_get_main_queue(), {
+                        self.dismissViewControllerAnimated(true, completion: nil)
+                    })
+                } else {
+                    displayError(self, errorString: errorString)
+                }
+            })
         })
-        })
-        
     }
     
     @IBAction func browseButtonPressed(sender: AnyObject) {
@@ -202,7 +189,7 @@ class InformationPostingVC: UIViewController {
         }
         else {
             // this may never be executed
-            // canOpen doesn't care about the link being valid
+            // canOpen doesn't care about the link being valid, just the http(s)
             displayError(self, errorString: "The link does appear to be valid")
             return
         }

@@ -310,14 +310,8 @@ public class UdacityClient: NSObject {
     }
     
     func getUserInfo() -> ( [String:String] ) {
-        
-        //var dict: [String: AnyObject]
-        //if firstName == "" || lastName == "" {
-            getPublicUserData(userID)
-        //}
-        
+        getPublicUserData(userID)
         return [ "uniqueKey" : self.userID, "firstName": self.firstName, "lastName": self.lastName ]
-        //return dict //return a proper dictionary
         
     }
 
