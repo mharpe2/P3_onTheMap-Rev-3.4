@@ -24,10 +24,10 @@ class StudentListVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
         
         //Mark: Custom Navigation buttons
         
-        refreshButton = UIBarButtonItem(barButtonSystemItem: .Refresh, target: self, action: "refreshButtonPressed:")
+        refreshButton = UIBarButtonItem(barButtonSystemItem: .refresh, target: self, action: #selector(StudentListVC.refreshButtonPressed(_:)))
         
         pinImage = UIImage(named: "pin.pdf")!
-        pinButton = UIBarButtonItem(image: pinImage, style: UIBarButtonItemStyle.Plain, target: self, action: "pinButtonPressed:")
+        pinButton = UIBarButtonItem(image: pinImage, style: UIBarButtonItemStyle.plain, target: self, action: #selector(StudentListVC.pinButtonPressed(_:)))
         
         let rightButtons = [refreshButton!, pinButton!]
         self.navigationItem.rightBarButtonItems = rightButtons
@@ -35,13 +35,13 @@ class StudentListVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
     }
 
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         //update the table 
         parseMngr.updateStudentInformation { (success, errorString) -> Void in
             if success {
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
                     self.studentsTableView.reloadData()
                 }
 
@@ -49,52 +49,52 @@ class StudentListVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
                displayError(self, errorString: errorString)            }
         }
 
-        self.studentsTableView.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        self.studentsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
     }
 
     
     //MARK: tableView numberOfRowsInSection
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return parseMngr.students.count
     }
     
     //MARK: tableView cellForRowAtIndexPath
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         // Get cell type
         let cellReuseIdentifier = "cell"
         let student = parseMngr.students[ indexPath.row]
         
-        let cell = tableView.dequeueReusableCellWithIdentifier(cellReuseIdentifier) as UITableViewCell!
+        let cell = tableView.dequeueReusableCell(withIdentifier: cellReuseIdentifier) as UITableViewCell!
         
         // Set cell defaults
         cell!.textLabel!.text = "\(student.firstName) \(student.lastName)"
         cell!.detailTextLabel?.text = student.mediaURL
         cell!.imageView!.image = UIImage(named: "pin.pdf")
-        cell!.imageView!.contentMode = UIViewContentMode.ScaleAspectFit
+        cell!.imageView!.contentMode = UIViewContentMode.scaleAspectFit
         
         return cell!
     }
     
     //MARK: tableView didSelectRowAtIndexPath
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
        
-        let app = UIApplication.sharedApplication()
+        let app = UIApplication.shared
         let studentAtIndex = parseMngr.students[ indexPath.row ]
-        app.openURL(( NSURL( string: studentAtIndex.mediaURL))!)
+        app.openURL(( URL( string: studentAtIndex.mediaURL))!)
     }
 
-    @IBAction func logoutButtonPressed(sender: AnyObject) {
+    @IBAction func logoutButtonPressed(_ sender: AnyObject) {
         UdacityClient.sharedInstance().logout()
-        self.dismissViewControllerAnimated(true, completion: nil)
+        self.dismiss(animated: true, completion: nil)
     }
     
-    func refreshButtonPressed(sender: UIButton) {
+    func refreshButtonPressed(_ sender: UIButton) {
         //update the table
         parseMngr.updateStudentInformation { (success, errorString) -> Void in
             if success {
                 print( "updateStudentInfo Count: \(self.parseMngr.students.count)" )
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
                     self.studentsTableView.reloadData()
                 }
                 
@@ -105,10 +105,10 @@ class StudentListVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
         }
     }
     
-    func pinButtonPressed(sender: UIButton) {
-        dispatch_async(dispatch_get_main_queue(), {
-            let controller = self.storyboard!.instantiateViewControllerWithIdentifier("InformationPostingController") 
-            self.presentViewController(controller, animated: true, completion: nil)
+    func pinButtonPressed(_ sender: UIButton) {
+        DispatchQueue.main.async(execute: {
+            let controller = self.storyboard!.instantiateViewController(withIdentifier: "InformationPostingController") 
+            self.present(controller, animated: true, completion: nil)
     })
     }
 

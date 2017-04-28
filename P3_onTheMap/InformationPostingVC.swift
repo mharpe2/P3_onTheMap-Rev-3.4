@@ -45,13 +45,13 @@ class InformationPostingVC: UIViewController {
         
     }
     
-    func searchForLocationDisplayOnMap(completionHandler: (success: Bool, errorString: String?) -> Void ) {
+    func searchForLocationDisplayOnMap(_ completionHandler: @escaping (_ success: Bool, _ errorString: String?) -> Void ) {
         
         // setup activity view
-        let activityViewIndicator : UIActivityIndicatorView = UIActivityIndicatorView(frame: CGRectMake(0,0, 50, 50)) as UIActivityIndicatorView
+        let activityViewIndicator : UIActivityIndicatorView = UIActivityIndicatorView(frame: CGRect(x: 0,y: 0, width: 50, height: 50)) as UIActivityIndicatorView
         activityViewIndicator.center = self.view.center
         activityViewIndicator.hidesWhenStopped = true
-        activityViewIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.Gray
+        activityViewIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.gray
         
         // start spinning activityView
         view.addSubview(activityViewIndicator)
@@ -73,7 +73,7 @@ class InformationPostingVC: UIViewController {
                 displayError(self, errorString: error!.localizedDescription)
                 activityViewIndicator.stopAnimating()
                 self.view.alpha = 1.0
-                completionHandler(success: false, errorString: "GeocodeAddressString Failed: \(error?.localizedDescription)" )
+                completionHandler(false, "GeocodeAddressString Failed: \(error?.localizedDescription)" )
                 return
             } else if let placemark = placemarks?[0] {
                 
@@ -89,17 +89,17 @@ class InformationPostingVC: UIViewController {
                 
                 activityViewIndicator.stopAnimating()
                 self.view.alpha = 1.0
-                completionHandler(success: true, errorString: nil)
+                completionHandler(true, nil)
                 return
             }
         })
     }
     
-    @IBAction func cancelButtonPressed(sender: AnyObject) {
-        self.dismissViewControllerAnimated(true, completion: nil)
+    @IBAction func cancelButtonPressed(_ sender: AnyObject) {
+        self.dismiss(animated: true, completion: nil)
     }
     
-    @IBAction func saveButtonPressed(sender: AnyObject) {
+    @IBAction func saveButtonPressed(_ sender: AnyObject) {
         
         // retrieve key, first name, last name from udacity
         var student: [String:AnyObject] = [:]
@@ -110,8 +110,8 @@ class InformationPostingVC: UIViewController {
             if success {
                 print("attempt point")
                 if let point = self.pointAnnotation {
-                    student["longitude"] = point.coordinate.longitude // point would be nil, if not in closure
-                    student["latitude"] = point.coordinate.latitude
+                    student["longitude"] = point.coordinate.longitude as AnyObject? // point would be nil, if not in closure
+                    student["latitude"] = point.coordinate.latitude as AnyObject?
                 }
                 
             }else {
@@ -120,15 +120,15 @@ class InformationPostingVC: UIViewController {
             }
             
             // gather user data from view and udacity singleton
-            student["mapString"] = self.locationTextField.text!  //from view
-            student["mediaURL"] = self.linkTextField.text!        //from view
-            student["firstName"] = self.udacity.firstName
-            student["lastName"] = self.udacity.lastName
-            student["uniqueKey"] = self.udacity.userID
+            student["mapString"] = self.locationTextField.text! as AnyObject?  //from view
+            student["mediaURL"] = self.linkTextField.text! as AnyObject?        //from view
+            student["firstName"] = self.udacity.firstName as AnyObject?
+            student["lastName"] = self.udacity.lastName as AnyObject?
+            student["uniqueKey"] = self.udacity.userID as AnyObject?
             
             if let point = self.pointAnnotation {
-                student["longitude"] = point.coordinate.longitude // point would be nil, if not in closure
-                student["latitude"] = point.coordinate.latitude
+                student["longitude"] = point.coordinate.longitude as AnyObject? // point would be nil, if not in closure
+                student["latitude"] = point.coordinate.latitude as AnyObject?
             } else {
                 displayError(self, errorString: "Location data invalid, longitude/latitude bad")
                 return
@@ -137,8 +137,8 @@ class InformationPostingVC: UIViewController {
             // Post Student
             self.parse.postLocation(student, completionHandler: {(success, errorString) -> Void in
                 if success {
-                    dispatch_async(dispatch_get_main_queue(), {
-                        self.dismissViewControllerAnimated(true, completion: nil)
+                    DispatchQueue.main.async(execute: {
+                        self.dismiss(animated: true, completion: nil)
                     })
                 } else {
                     displayError(self, errorString: errorString)
@@ -147,21 +147,23 @@ class InformationPostingVC: UIViewController {
         })
     }
     
-    @IBAction func browseButtonPressed(sender: AnyObject) {
+    @IBAction func browseButtonPressed(_ sender: AnyObject) {
         
         // Private function
         // Tests URL first, if it thinks it can be opened then it is attemped
-        func openAppLink(link: String) -> Bool {
-            if UIApplication.sharedApplication().canOpenURL(NSURL(string: link)!) {
-                let app = UIApplication.sharedApplication()
-                app.openURL(NSURL(string: linkTextField.text!)!)
+        func openAppLink(_ link: String) -> Bool {
+            if UIApplication.shared.canOpenURL(URL(string: link)!) {
+                let app = UIApplication.shared
+                app.openURL(URL(string: linkTextField.text!)!)
                 return true
                 
             }
             return false
         }
         
-        let originalString = linkTextField.text!
+        guard let originalString = linkTextField.text, originalString != "" else {
+            return
+        }
         
         if !openAppLink(originalString)
         {
@@ -173,13 +175,13 @@ class InformationPostingVC: UIViewController {
                     
                     if (openAppLink("http://" + originalString ) ) {
                         linkTextField.text = "http://" + originalString
-                        openAppLink(linkTextField.text!)
+                        _ = openAppLink(linkTextField.text!)
                         return
                         
                         // if http does not work try https
                     } else if (openAppLink("https://" + originalString) ) {
                         linkTextField.text = "https://" + originalString
-                        openAppLink(linkTextField.text!)
+                        _ = openAppLink(linkTextField.text!)
                         return
                     }
             }
@@ -196,7 +198,7 @@ class InformationPostingVC: UIViewController {
         
     }
     
-    @IBAction func findOnMapButtonPressed(sender: AnyObject) {
+    @IBAction func findOnMapButtonPressed(_ sender: AnyObject) {
         
         searchForLocationDisplayOnMap( {(success, error) in
             if success {

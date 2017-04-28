@@ -11,6 +11,16 @@ import FBSDKLoginKit
 import FBSDKCoreKit
 
 class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
+    /**
+     Sent to the delegate when the button was used to login.
+     - Parameter loginButton: the sender
+     - Parameter result: The results of the login
+     - Parameter error: The error (if any) from the login
+     */
+    public func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
+        //code
+    }
+
     
     
     @IBOutlet weak var loginButton: BorderedButton!
@@ -41,14 +51,14 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
         
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         self.addKeyboardDismissRecognizer()
         self.subscribeToKeyboardNotifications()
     }
     
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
         self.removeKeyboardDismissRecognizer()
@@ -65,18 +75,18 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
         self.view.removeGestureRecognizer(tapRecognizer!)
     }
     
-    func handleSingleTap(recognizer: UITapGestureRecognizer) {
+    func handleSingleTap(_ recognizer: UITapGestureRecognizer) {
         self.view.endEditing(true)
     }
     
     //MARK: - Udacity / Facebook login
     // If facebook token is not nil it will be used. otherwise username/password
     // text fields will be used for standard udacity login.
-    @IBAction func loginButtonTouch(sender: AnyObject) {
+    @IBAction func loginButtonTouch(_ sender: AnyObject) {
         
         // if user is already logged in complete login
-        if FBSDKAccessToken.currentAccessToken() != nil {
-            client.FBLogin(self, appId: FacebookConst.appId, FBToken: FBSDKAccessToken.currentAccessToken())  { (success, errorString) in
+        if FBSDKAccessToken.current() != nil {
+            client.FBLogin(self, appId: FacebookConst.appId, FBToken: FBSDKAccessToken.current())  { (success, errorString) in
                 if success {
                     self.completeLogin()
                 } else {
@@ -96,14 +106,14 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
         }
     }
     
-    @IBAction func signupButton(sender: AnyObject) {
-        UIApplication.sharedApplication().openURL(NSURL(string:"https://www.udacity.com/account/auth#!/signup")!)
+    @IBAction func signupButton(_ sender: AnyObject) {
+        UIApplication.shared.openURL(URL(string:"https://www.udacity.com/account/auth#!/signup")!)
     }
     
     func completeLogin() {
-        dispatch_async(dispatch_get_main_queue(), {
-            let controller = self.storyboard!.instantiateViewControllerWithIdentifier("mainTabBarController") as! UITabBarController
-            self.presentViewController(controller, animated: true, completion: nil)
+        DispatchQueue.main.async(execute: {
+            let controller = self.storyboard!.instantiateViewController(withIdentifier: "mainTabBarController") as! UITabBarController
+            self.present(controller, animated: true, completion: nil)
             
             
         })
@@ -113,24 +123,24 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
     func configureUI() {
         
         /* Configure background gradient */
-        self.view.backgroundColor = UIColor.clearColor()
-        let colorTop = UIColor(red: 238/255.0, green: 169/255.0, blue: 17/255.0, alpha: 1.0).CGColor
-        let colorBottom = UIColor(red: 0.023, green: 0.569, blue: 0.910, alpha: 1.0).CGColor
+        self.view.backgroundColor = UIColor.clear
+        let colorTop = UIColor(red: 238/255.0, green: 169/255.0, blue: 17/255.0, alpha: 1.0).cgColor
+        let colorBottom = UIColor(red: 0.023, green: 0.569, blue: 0.910, alpha: 1.0).cgColor
         let backgroundGradient = CAGradientLayer()
         backgroundGradient.colors = [colorTop, colorBottom]
         backgroundGradient.locations = [0.0, 1.0]
         backgroundGradient.frame = view.frame
-        self.view.layer.insertSublayer(backgroundGradient, atIndex: 0)
+        self.view.layer.insertSublayer(backgroundGradient, at: 0)
         
         /* Configure tap recognizer */
-        tapRecognizer = UITapGestureRecognizer(target: self, action: "handleSingleTap:")
+        tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(LoginVC.handleSingleTap(_:)))
         tapRecognizer?.numberOfTapsRequired = 1
         
     }
     
     //MARK: Facebook Delegates
     // facbook delegate login
-    func loginButton(loginButton: FBSDKLoginButton!, didCompleteWithResult result: FBSDKLoginManagerLoginResult!, error: NSError!) {
+    func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: NSError!) {
         print("Facebook Login - User Logged In")
         
         if ((error) != nil)
@@ -144,8 +154,8 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
         }
         
         // if facebook login completed, complete udacity login
-        if FBSDKAccessToken.currentAccessToken() != nil {
-            client.FBLogin(self, appId: FacebookConst.appId, FBToken: FBSDKAccessToken.currentAccessToken())  { (success, errorString) in
+        if FBSDKAccessToken.current() != nil {
+            client.FBLogin(self, appId: FacebookConst.appId, FBToken: FBSDKAccessToken.current())  { (success, errorString) in
                 if success {
                     self.completeLogin()
                 } else {
@@ -158,7 +168,7 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
     
     
     
-    func loginButtonDidLogOut(loginButton: FBSDKLoginButton!) {
+    func loginButtonDidLogOut(_ loginButton: FBSDKLoginButton!) {
         print("Facebook User Logged Out")
         
     }
@@ -166,20 +176,26 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
     //MARK: Facebook Funcs
     func returnUserData()
     {
-        let graphRequest : FBSDKGraphRequest = FBSDKGraphRequest(graphPath: FBSDKAccessToken.currentAccessToken().userID, parameters: nil)
-        graphRequest.startWithCompletionHandler({ (connection, result, error) -> Void in
+        let graphRequest : FBSDKGraphRequest = FBSDKGraphRequest(graphPath: FBSDKAccessToken.current().userID, parameters: nil)
+        graphRequest.start(completionHandler: { (connection, result, error) -> Void in
             
             if ((error) != nil)
             {
                 // Process error
-                displayError(self, errorString: error.description)
+                displayError(self, errorString: error.debugDescription)
             }
             else
             {
-                print("fetched user: \(result)")
-                let userName : NSString = result.valueForKey("name") as! NSString
+                print("fetched user: \(String(describing: result))")
+                //let userName : NSString = result.value(forKey: "name") as! NSString
+                guard let newResult = result as? [String: Any] else {
+                    print("Cast to String : Any Failed")
+                    return
+                }
+                let userName : String = newResult["name"] as! String
+
                 print( "User Name is: \(userName)")
-                let userEmail : NSString = result.valueForKey("email") as! NSString
+                let userEmail : String = newResult["email"] as! String
                 print("User Email is: \(userEmail)")
             }
         })
@@ -191,15 +207,15 @@ class LoginVC: UIViewController, FBSDKLoginButtonDelegate {
 extension LoginVC {
     
     func subscribeToKeyboardNotifications() {
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardWillShow:", name: UIKeyboardWillShowNotification, object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardWillHide:", name: UIKeyboardWillHideNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(LoginVC.keyboardWillShow(_:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(LoginVC.keyboardWillHide(_:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
     }
     
     func unsubscribeToKeyboardNotifications() {
-        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIKeyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillShow, object: nil)
     }
     
-    func keyboardWillShow(notification: NSNotification) {
+    func keyboardWillShow(_ notification: Notification) {
         
         if keyboardAdjusted == false {
             lastKeyboardOffset = getKeyboardHeight(notification) / 2
@@ -208,7 +224,7 @@ extension LoginVC {
         }
     }
     
-    func keyboardWillHide(notification: NSNotification) {
+    func keyboardWillHide(_ notification: Notification) {
         
         if keyboardAdjusted == true {
             self.view.superview?.frame.origin.y += lastKeyboardOffset
@@ -216,10 +232,10 @@ extension LoginVC {
         }
     }
     
-    func getKeyboardHeight(notification: NSNotification) -> CGFloat {
+    func getKeyboardHeight(_ notification: Notification) -> CGFloat {
         let userInfo = notification.userInfo
         let keyboardSize = userInfo![UIKeyboardFrameEndUserInfoKey] as! NSValue // of CGRect
-        return keyboardSize.CGRectValue().height
+        return keyboardSize.cgRectValue.height
     }
 }
 

@@ -32,39 +32,39 @@ class BorderedButton: UIButton {
     
     // MARK: - Setters
     
-    private func setBackingColor(backingColor : UIColor) -> Void {
+    fileprivate func setBackingColor(_ backingColor : UIColor) -> Void {
         if (self.backingColor != nil) {
             self.backingColor = backingColor;
             self.backgroundColor = backingColor;
         }
     }
     
-    private func setHighlightedBackingColor(highlightedBackingColor: UIColor) -> Void {
+    fileprivate func setHighlightedBackingColor(_ highlightedBackingColor: UIColor) -> Void {
         self.highlightedBackingColor = highlightedBackingColor
         self.backingColor = highlightedBackingColor
     }
     
     // MARK: - Tracking
     
-    override func beginTrackingWithTouch(touch: UITouch, withEvent: UIEvent?) -> Bool {
+    override func beginTracking(_ touch: UITouch, with withEvent: UIEvent?) -> Bool {
         self.backgroundColor = self.highlightedBackingColor
         return true
     }
     
-    override func endTrackingWithTouch(touch: UITouch?, withEvent: UIEvent?) {
+    override func endTracking(_ touch: UITouch?, with withEvent: UIEvent?) {
         self.backgroundColor = self.backingColor
     }
     
-    override func cancelTrackingWithEvent(event: UIEvent?) {
+    override func cancelTracking(with event: UIEvent?) {
         self.backgroundColor = self.backingColor
     }
     
     // MARK: - Layout
     
-    override func sizeThatFits(size: CGSize) -> CGSize {
-        let userInterfaceIdiom = UIDevice.currentDevice().userInterfaceIdiom
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        let userInterfaceIdiom = UIDevice.current.userInterfaceIdiom
         let extraButtonPadding : CGFloat = 14.0
-        var sizeThatFits = CGSizeZero
+        var sizeThatFits = CGSize.zero
         sizeThatFits.width = super.sizeThatFits(size).width + extraButtonPadding
         sizeThatFits.height = 44.0
         return sizeThatFits

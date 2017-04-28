@@ -10,30 +10,30 @@ import UIKit
 
 
 // Display alert
-func displayError(view: UIViewController, errorString: String?) {
-    dispatch_async(dispatch_get_main_queue(), {
+func displayError(_ view: UIViewController, errorString: String?) {
+    DispatchQueue.main.async(execute: {
         //present view controller
         var alert: UIAlertController!
         
-        alert = UIAlertController(title: "Woops", message: errorString, preferredStyle: UIAlertControllerStyle.Alert)
+        alert = UIAlertController(title: "Woops", message: errorString, preferredStyle: UIAlertControllerStyle.alert)
         
-        alert.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default, handler: nil))
-        view.presentViewController(alert, animated: true, completion: nil)
+        alert.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.default, handler: nil))
+        view.present(alert, animated: true, completion: nil)
         
     })
 }
 
 //shake a view
-func shakeViewController(view: UIViewController) {
+func shakeViewController(_ view: UIViewController) {
     
     let animation = CABasicAnimation(keyPath: "position")
     animation.duration = 0.07
     animation.repeatCount = 4
     animation.autoreverses = true
     animation.fromValue =
-        NSValue(CGPoint: CGPointMake(view.view.center.x - 10, view.view.center.y))
-    animation.toValue = NSValue(CGPoint: CGPointMake(view.view.center.x + 10, view.view.center.y))
-    view.view.layer.addAnimation(animation, forKey: "position")
+        NSValue(cgPoint: CGPoint(x: view.view.center.x - 10, y: view.view.center.y))
+    animation.toValue = NSValue(cgPoint: CGPoint(x: view.view.center.x + 10, y: view.view.center.y))
+    view.view.layer.add(animation, forKey: "position")
     
 }
 

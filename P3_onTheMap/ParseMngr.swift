@@ -22,23 +22,23 @@ class ParseMngr: NSObject {
     }
     
     // perform update by network
-    func updateStudentInformation( completionHandler: (success: Bool, errorString: String?) -> Void ) {
+    func updateStudentInformation( _ completionHandler: @escaping (_ success: Bool, _ errorString: String?) -> Void ) {
         
         parseClient.getStudentLocations { (success, errorString, result) -> Void in
             if success {
                 self.students = result!
     
                 //sort array by last name, then first
-                self.students.sortInPlace { $0.updatedAt < $1.updatedAt }
-                completionHandler(success: true, errorString: nil)
+                self.students.sort { $0.updatedAt < $1.updatedAt }
+                completionHandler(true, nil)
             } else {
-                 completionHandler(success: false, errorString: errorString)
+                 completionHandler(false, errorString)
             }
         }
     }
     
     func refreshStudentInformation() {
-        students.removeAll(keepCapacity: true)
+        students.removeAll(keepingCapacity: true)
         
         self.updateStudentInformation { (success, errorString) -> Void in
             if success {
@@ -49,15 +49,15 @@ class ParseMngr: NSObject {
         }
     }
     
-    func postLocation( studentDict: [String:AnyObject], completionHandler: (success: Bool, errorString: String?) -> Void) {
+    func postLocation( _ studentDict: [String:AnyObject], completionHandler: @escaping (_ success: Bool, _ errorString: String?) -> Void) {
         
         parseClient.postStudentLocations(studentDict, completionHandler: { (success, errorString) -> Void in
             if success {
-                completionHandler(success: true, errorString: nil)
+                completionHandler(true, nil)
                 self.currentUserInformation = StudentInformation(dictionary: studentDict)
                 return
             } else {
-                completionHandler(success: false, errorString: errorString)
+                completionHandler(false, errorString)
                 return
             }
         }) // completionHandler

@@ -11,10 +11,10 @@ import UIKit
 import FBSDKCoreKit
 import FBSDKLoginKit
 
-public class UdacityClient: NSObject {
+open class UdacityClient: NSObject {
     
     // Session
-    var session: NSURLSession!
+    var session: URLSession!
     
     // State
     var sessionID : String = ""
@@ -29,71 +29,80 @@ public class UdacityClient: NSObject {
     
     override init() {
         super.init()
-        session = NSURLSession.sharedSession()
+        session = URLSession.shared
     }
     
     
     // MARK: LOGIN
-    func login(hostViewController: UIViewController, username: String, password: String, completionHandler: (success: Bool, errorString: String?) -> Void) {
+    func login(_ hostViewController: UIViewController, username: String, password: String, completionHandler: @escaping (_ success: Bool, _ errorString: String?) -> Void) {
         
         // 2. build the string
         let urlString = UdacityClient.Constants.BaseURLSecure + "session"
-        let url = NSURL(string: urlString)!
+        let url = URL(string: urlString)!
         
         /* 3A. Configure the request */
-        let request = NSMutableURLRequest(URL: url)
-        request.HTTPMethod = "POST"
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         var err: NSError?
         let credentials = [ "udacity" : ["username" : username, "password" : password] ]
         do {
-            request.HTTPBody = try NSJSONSerialization.dataWithJSONObject(credentials, options: [])
+            request.httpBody = try JSONSerialization.data(withJSONObject: credentials, options: [])
         } catch let error as NSError {
             err = error
-            request.HTTPBody = nil
-            completionHandler(success: false, errorString: err?.localizedDescription)
+            request.httpBody = nil
+            completionHandler(false, err?.localizedDescription)
             return
         }
         
         /* 4. Make the request */
-        let task = self.session.dataTaskWithRequest(request) {data, response, error in
-            
-            if error != nil {
-                print("Could not complete the request \(error)")
-                completionHandler(success: false, errorString: error!.localizedDescription)
+        let task = URLSession.shared.dataTask(with: request) {data, response, error in
+    
+            guard let data = data, error == nil else {
+                print("Error:\(String(describing: error)))")
+                completionHandler(false, error!.localizedDescription)
                 return
             }
+//            if error != nil {
+//                print("Could not complete the request \(String(describing: error))")
+//                
+//                return
+//            }
             
             /* 5A. Parse the data */
-            //var parsingError: NSError? = nil
-            let newData = data!.subdataWithRange(NSMakeRange(5, data!.length - 5))
-            let jsonResult = (try! NSJSONSerialization.JSONObjectWithData(newData, options: [])) as! NSDictionary
+            let range = Range(5..<data.count)
+            let newData = data.subdata(in: range)
+            
+            let jsonResult = (try! JSONSerialization.jsonObject(with: newData, options: [])) as! NSDictionary
             
             //check if user is registerd
-            if let error = jsonResult.valueForKey("error") as? String {
-                let errorMsg = jsonResult.valueForKey("error") as? String
-                print("Oh No!!! \(error)")
-                completionHandler(success: false, errorString: error)
+            if let error = jsonResult.value(forKey: "error") as? String {
+                let errorMsg = jsonResult.value(forKey: "error") //as? String
+                print("\(String(describing: errorMsg)) with \(error)")
+                completionHandler(false, error)
                 self.isLoggedIn = false
                 return
                 
             } else {
                 print("setup account dictionary")
-                if let accountDict = jsonResult.valueForKey("account") as? [String:AnyObject]
+                if let accountDict = jsonResult.value(forKey: "account") as? [String:AnyObject]
                 {
                     
                     self.registered = (accountDict["registered"] as? Bool)!
                     if self.registered == true { self.isLoggedIn = true }
                     self.userID = (accountDict["key"] as? String)!
                     
-                    let sessionDictionary = jsonResult.valueForKey("session") as! [String:AnyObject]
+                    let sessionDictionary = jsonResult.value(forKey: "session") as! [String:AnyObject]
                     self.sessionID = ((sessionDictionary["id"] as? String))!
                     self.expiration = (sessionDictionary["expiration"] as? String)!
-                    print(NSString(data: newData, encoding: NSUTF8StringEncoding))
-                    self.getPublicUserData(self.userID)
-                    completionHandler(success: true, errorString: "")
+                    
+                    let responseString = String(data: newData, encoding: .utf8)
+                    print("Response: \(String(describing: responseString))")
+                    //print(String(data: newData, encoding: String.Encoding.utf8.rawValue))
+                    _ = self.getPublicUserData(self.userID)
+                    completionHandler(true, "")
                 }
             } // task
             
@@ -111,28 +120,33 @@ public class UdacityClient: NSObject {
         
         // 2. build the string
         let urlString = UdacityClient.Constants.BaseURLSecure + "session"
-        let url = NSURL(string: urlString)!
+        let url = URL(string: urlString)!
         
         /* 3A. Configure the request */
-        let request = NSMutableURLRequest(URL: url)
-        request.HTTPMethod = "DELETE"
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
         
-        var xsrfCookie: NSHTTPCookie? = nil
-        let sharedCookieStorage = NSHTTPCookieStorage.sharedHTTPCookieStorage()
-        for cookie in sharedCookieStorage.cookies as [NSHTTPCookie]! {
+        var xsrfCookie: HTTPCookie? = nil
+        let sharedCookieStorage = HTTPCookieStorage.shared
+        for cookie in sharedCookieStorage.cookies as [HTTPCookie]! {
             if cookie.name == "XSRF-TOKEN" { xsrfCookie = cookie }
         }
         if let xsrfCookie = xsrfCookie {
             request.addValue(xsrfCookie.value, forHTTPHeaderField: "X-XSRF-Token")
         }
         
-        let task = self.session.dataTaskWithRequest(request) { data, response, error in
-            if error != nil { // Handle error…
+       // let task = self.session.dataTask(with: request, completionHandler: { data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            guard let data = data, error == nil else {
+                print("Error:\(String(describing: error)))")
                 return
             }
             
-            let newData = data!.subdataWithRange(NSMakeRange(5, data!.length - 5))
-            print(NSString(data: newData, encoding: NSUTF8StringEncoding))
+            let range = Range(5..<data.count)
+            let newData = data.subdata(in: range)
+            let responseString = String(data: newData, encoding: .utf8)
+            print("Response: \(String(describing: responseString))")
         }
         
         task.resume()
@@ -146,7 +160,7 @@ public class UdacityClient: NSObject {
     
     // MARK: getPublicUserData
     // TODO: add callback to handle error
-    func getPublicUserData(user: String) -> [String:AnyObject] {
+    func getPublicUserData(_ user: String) -> [String:AnyObject] {
         
         // Make sure user is logged in before getting data
         print("getting user data")
@@ -161,32 +175,33 @@ public class UdacityClient: NSObject {
         
         // 2. build the string
         let urlString = UdacityClient.Constants.BaseURLSecure + "users/" + "\(self.userID)"
-        let url = NSURL(string: urlString)!
+        let url = URL(string: urlString)!
         
         /* 3A. Configure the request */
-        let request = NSMutableURLRequest(URL: url)
-        request.HTTPMethod = "GET"
+        var request =  URLRequest(url: url)
+        request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         
         print( request.description )
-        let session = NSURLSession.sharedSession()
-        let task = session.dataTaskWithRequest(request) { data, response, error in
-            if error != nil { // Handle error...
-                
-                print("Error getting public data \(error?.localizedDescription)")
-                
+        //let session = URLSession.shared
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            guard let data = data, error == nil else {
+                print("Error:\(String(describing: error)))")
                 return
             }
-            let newData = data!.subdataWithRange(NSMakeRange(5, data!.length - 5)) /* subset response data! */
-            let jsonResult = (try! NSJSONSerialization.JSONObjectWithData(newData, options: [])) as! NSDictionary
+            
+            let range = Range(5..<data.count)
+            let newData = data.subdata(in: range)
+            let jsonResult = (try! JSONSerialization.jsonObject(with: newData, options: [])) as! NSDictionary
             
             //check if user is registerd
-            if let error = jsonResult.valueForKey("error") as? String {
+            if let error = jsonResult.value(forKey: "error") as? String {
                 //let errorMsg = jsonResult.valueForKey("error") as? String
                 print("Oh No!!! \(error)")
                 
             }
-            if let userDict = jsonResult.valueForKey("user") as? [String:AnyObject] {
+            if let userDict = jsonResult.value(forKey: "user") as? [String:AnyObject] {
                 self.firstName = (userDict["first_name"] as? String)!
                 self.lastName = (userDict["last_name"] as? String)!
                 userData = userDict
@@ -205,66 +220,71 @@ public class UdacityClient: NSObject {
     
     //MARK: Facebook Login
     // MARK: LOGIN
-    func FBLogin(hostViewController: UIViewController, appId: String, FBToken: FBSDKAccessToken, completionHandler: (success: Bool, errorString: String?) -> Void) {
+    func FBLogin(_ hostViewController: UIViewController, appId: String, FBToken: FBSDKAccessToken, completionHandler: @escaping (_ success: Bool, _ errorString: String?) -> Void) {
         
         // 2. build the string
         let urlString = UdacityClient.Constants.BaseURLSecure + "session"
-        let url = NSURL(string: urlString)!
+        var request = URLRequest(url: URL(string: urlString)!)
         
         /* 3A. Configure the request */
-        let request = NSMutableURLRequest(URL: url)
-        request.HTTPMethod = "POST"
+        //let request = URL(string: url)
+        
+        request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         var err: NSError?
         let credentials = [ "facebook_mobile" : ["access_token" : FBToken.tokenString ]]
         do {
-            request.HTTPBody = try NSJSONSerialization.dataWithJSONObject(credentials, options: [])
+            request.httpBody = try JSONSerialization.data(withJSONObject: credentials, options: [])
         } catch let error as NSError {
             err = error
-            request.HTTPBody = nil
-            completionHandler(success: false, errorString: err?.localizedDescription)
+            request.httpBody = nil
+            completionHandler(false, err?.localizedDescription)
             return
         }
         
         /* 4. Make the request */
-        let task = self.session.dataTaskWithRequest(request) {data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
             
-            if error != nil {
-                print("Could not complete the request \(error)")
-                completionHandler(success: false, errorString: error!.localizedDescription)
+            guard let data = data, error == nil else {
+                print("Error:\(String(describing: error)))")
                 return
             }
             
             /* 5A. Parse the data */
-            //var parsingError: NSError? = nil
-            let newData = data!.subdataWithRange(NSMakeRange(5, data!.length - 5))
-            let jsonResult = (try! NSJSONSerialization.JSONObjectWithData(newData, options: [])) as! NSDictionary
+            let range = Range(5..<data.count)
+            let newData = data.subdata(in: range)
+            let jsonResult = (try! JSONSerialization.jsonObject(with: newData, options: [])) as! NSDictionary
             
             //check if user is registerd
-            if let error = jsonResult.valueForKey("error") as? String {
-                let errorMsg = jsonResult.valueForKey("error") as? String
+            if let error = jsonResult.value(forKey: "error") as? String {
+                let errorMsg = jsonResult.value(forKey: "error") as? String
                 print("Oh No!!! \(error)")
-                completionHandler(success: false, errorString: error)
+                completionHandler(false, error)
                 self.isLoggedIn = false
                 return
                 
             } else {
                 print("setup account dictionary")
-                if let accountDict = jsonResult.valueForKey("account") as? [String:AnyObject]
+                if let accountDict = jsonResult.value(forKey: "account") as? [String:AnyObject]
                 {
                     
                     self.registered = (accountDict["registered"] as? Bool)!
                     if self.registered == true { self.isLoggedIn = true }
                     self.userID = (accountDict["key"] as? String)!
                     
-                    let sessionDictionary = jsonResult.valueForKey("session") as! [String:AnyObject]
+                    let sessionDictionary = jsonResult.value(forKey: "session") as! [String:AnyObject]
                     self.sessionID = ((sessionDictionary["id"] as? String))!
                     self.expiration = (sessionDictionary["expiration"] as? String)!
-                    print(NSString(data: newData, encoding: NSUTF8StringEncoding))
-                    self.getPublicUserData(self.userID)
-                    completionHandler(success: true, errorString: "")
+                    
+                    let responseString = String(data: newData, encoding: .utf8)
+                    print("Response: \(String(describing: responseString))")
+
+                    
+//                    print(NSString(data: newData, encoding: String.Encoding.utf8))
+//                    self.getPublicUserData(self.userID)
+                    completionHandler(true, "")
                 }
             } // task
             
@@ -289,7 +309,7 @@ public class UdacityClient: NSObject {
         print( "id:\(userID), registered:\(registered), expiration\(expiration)")
     }
     
-    class func escapedParameters(parameters: [String : AnyObject]) -> String {
+    class func escapedParameters(_ parameters: [String : AnyObject]) -> String {
         
         var urlVars = [String]()
         
@@ -299,18 +319,18 @@ public class UdacityClient: NSObject {
             let stringValue = "\(value)"
             
             /* Escape it */
-            let escapedValue = stringValue.stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())
+            let escapedValue = stringValue.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)
             
             /* Append it */
             urlVars += [key + "=" + "\(escapedValue!)"]
             
         }
         
-        return (!urlVars.isEmpty ? "?" : "") + urlVars.joinWithSeparator("&")
+        return (!urlVars.isEmpty ? "?" : "") + urlVars.joined(separator: "&")
     }
     
     func getUserInfo() -> ( [String:String] ) {
-        getPublicUserData(userID)
+        _ = getPublicUserData(userID)
         return [ "uniqueKey" : self.userID, "firstName": self.firstName, "lastName": self.lastName ]
         
     }

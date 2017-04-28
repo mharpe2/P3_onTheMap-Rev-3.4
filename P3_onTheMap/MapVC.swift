@@ -28,10 +28,10 @@ class MapVC: UIViewController, MKMapViewDelegate {
         
         //Mark: Custom Navigation buttons
         
-        refreshButton = UIBarButtonItem(barButtonSystemItem: .Refresh, target: self, action: "refreshButtonPressed:")
+        refreshButton = UIBarButtonItem(barButtonSystemItem: .refresh, target: self, action: #selector(MapVC.refreshButtonPressed(_:)))
         
         pinImage = UIImage(named: "pin.pdf")!
-        pinButton = UIBarButtonItem(image: pinImage, style: UIBarButtonItemStyle.Plain, target: self, action: "pinButtonPressed:")
+        pinButton = UIBarButtonItem(image: pinImage, style: UIBarButtonItemStyle.plain, target: self, action: #selector(MapVC.pinButtonPressed(_:)))
         
         let rightButtons = [refreshButton!, pinButton!]
         self.navigationItem.rightBarButtonItems = rightButtons
@@ -40,12 +40,12 @@ class MapVC: UIViewController, MKMapViewDelegate {
         
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
         
         parseMngr.updateStudentInformation { (success, errorString) -> Void in
             if success {
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                     self.doMapStuff()
                 }
             } else {
@@ -84,16 +84,16 @@ class MapVC: UIViewController, MKMapViewDelegate {
     // MARK: - MKMapViewDelegate
     
     // create a view with a "right callout accessory view". 
-    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView! {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView! {
         
         let reuseId = "pin"
-        var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKPinAnnotationView
+        var pinView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseId) as? MKPinAnnotationView
         
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
             pinView!.canShowCallout = true
-            pinView!.pinColor = .Red
-            pinView!.rightCalloutAccessoryView = UIButton(type: .DetailDisclosure)
+            pinView!.pinColor = .red
+            pinView!.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
         }
         else {
             pinView!.annotation = annotation
@@ -102,10 +102,10 @@ class MapVC: UIViewController, MKMapViewDelegate {
             //change current users pin  Green on map
             if parseMngr.currentUserInformation != nil {
                 if (pinView?.annotation?.title)! == ("\(parseMngr.currentUserInformation.firstName) \(parseMngr.currentUserInformation.lastName)") {
-                    pinView?.pinColor = .Green
+                    pinView?.pinColor = .green
                     
                 } else {
-                    pinView?.pinColor = .Red
+                    pinView?.pinColor = .red
                 }
             }
         }
@@ -114,23 +114,23 @@ class MapVC: UIViewController, MKMapViewDelegate {
     
     // delegate method is implemented to respond to taps. It opens the system browser
     // to the URL specified in the annotationViews subtitle property.
-    func mapView(mapView: MKMapView, annotationView: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+    func mapView(_ mapView: MKMapView, annotationView: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         
         if control == annotationView.rightCalloutAccessoryView {
-            let app = UIApplication.sharedApplication()
-            app.openURL(NSURL(string: annotationView.annotation!.subtitle!!)!)
+            let app = UIApplication.shared
+            app.openURL(URL(string: annotationView.annotation!.subtitle!!)!)
         }
     }
     
     
-    @IBAction func logoutButtonPressed(sender: AnyObject) {
+    @IBAction func logoutButtonPressed(_ sender: AnyObject) {
         UdacityClient.sharedInstance().logout()
-        self.dismissViewControllerAnimated(true, completion: nil)
+        self.dismiss(animated: true, completion: nil)
     }
     
-    func refreshButtonPressed(sender: UIButton) {
+    func refreshButtonPressed(_ sender: UIButton) {
         
-        refreshButton.enabled = false
+        refreshButton.isEnabled = false
         
         // remove all annotations from the map
         let annotations = self.mapView.annotations
@@ -138,9 +138,9 @@ class MapVC: UIViewController, MKMapViewDelegate {
         
         parseMngr.updateStudentInformation { (success, errorString) -> Void in
             if success {
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
                     self.doMapStuff()
-                    self.refreshButton.enabled = true
+                    self.refreshButton.isEnabled = true
                 }
             } else {
                 displayError(self, errorString: String("Failed to refresh " + errorString!) )
@@ -149,10 +149,10 @@ class MapVC: UIViewController, MKMapViewDelegate {
         }
     }
     
-    func pinButtonPressed(sender: UIButton) {
-        dispatch_async(dispatch_get_main_queue(), {
-            let controller = self.storyboard!.instantiateViewControllerWithIdentifier("InformationPostingController") 
-            self.presentViewController(controller, animated: true, completion: nil)
+    func pinButtonPressed(_ sender: UIButton) {
+        DispatchQueue.main.async(execute: {
+            let controller = self.storyboard!.instantiateViewController(withIdentifier: "InformationPostingController") 
+            self.present(controller, animated: true, completion: nil)
         })
     }
 }
