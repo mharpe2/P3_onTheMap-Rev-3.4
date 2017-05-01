@@ -81,6 +81,11 @@ class StudentListVC: UIViewController, UITableViewDelegate, UITableViewDataSourc
        
         let app = UIApplication.shared
         let studentAtIndex = parseMngr.students[ indexPath.row ]
+        
+        guard studentAtIndex.mediaURL != "" else {
+            return
+        }
+        
         app.openURL(( URL( string: studentAtIndex.mediaURL))!)
     }
 

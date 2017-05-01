@@ -13,7 +13,7 @@ class ParseClient: NSObject {
     // MARK: LOGIN
     func getStudentLocations(_ completionHandler: @escaping (_ success: Bool, _ errorString: String?, _ result:  [StudentInformation]?) -> Void )  {
         
-            var request = URLRequest(url: URL(string: const.secureURL)!)
+            var request = URLRequest(url: URL(string: const.secureURL + "/StudentLocation")!)
             request.addValue(const.appID, forHTTPHeaderField: "X-Parse-Application-Id")
             request.addValue(const.APIKey, forHTTPHeaderField: "X-Parse-REST-API-Key")
             
@@ -64,22 +64,33 @@ class ParseClient: NSObject {
         
         let student = [ "uniqueKey": uniqueKey, "firstName" : firstName, "lastName" : lastName, "mapString" : mapString, "mediaURL" : mediaURL, "latitude" : lat, "longitude": long ] as [String : Any]
         
-        var request = URLRequest(url: URL(string: const.secureURL)!)
+        let jsonData: Data
+        do {
+            jsonData = try JSONSerialization.data(withJSONObject: student, options: .prettyPrinted)
+        } catch {
+            print("Error occured postStudentLocations converting student dictionary to json")
+            completionHandler( false, "error")
+            return
+        }
+        
+        var request = URLRequest(url: URL(string: const.secureURL + "/StudentLocation")!)
         request.httpMethod = "POST"
         request.addValue(const.appID, forHTTPHeaderField: "X-Parse-Application-Id")
         request.addValue(const.APIKey, forHTTPHeaderField: "X-Parse-REST-API-Key")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        var err: NSError?
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: student, options: [])
-        } catch let error as NSError {
-            err = error
-            request.httpBody = nil
-            print( err?.description )
-            completionHandler(false, err?.localizedDescription)
-            return
-        }
+        request.httpBody = jsonData
+        
+//        //var err: NSError?
+//        do {
+//            request.httpBody = try JSONSerialization.data(withJSONObject: student, options: [])
+//        } catch let error as NSError {
+//           // err = error
+//            request.httpBody = nil
+//            print( error.description )
+//            completionHandler(false, error.localizedDescription)
+//            return
+//        }
         
         let session = URLSession.shared
         let task = session.dataTask(with: request, completionHandler: { data, response, error in
@@ -89,7 +100,16 @@ class ParseClient: NSObject {
                 return
             }
             
-            print(NSString(data: data!, encoding: String.Encoding.utf8.rawValue))
+            guard let newData = data,
+                let responseString = String(data: newData, encoding: .utf8) else
+            {
+                return
+            }
+           
+            //let responseString = String(data: newData, encoding: .utf8)
+            print("Response: \(String(describing: responseString))")
+
+            //print(NSString(data: data!, encoding: String.Encoding.utf8.rawValue))
             completionHandler(true, nil)
             return
 

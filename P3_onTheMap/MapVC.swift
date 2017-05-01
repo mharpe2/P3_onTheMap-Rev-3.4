@@ -118,7 +118,11 @@ class MapVC: UIViewController, MKMapViewDelegate {
         
         if control == annotationView.rightCalloutAccessoryView {
             let app = UIApplication.shared
-            app.openURL(URL(string: annotationView.annotation!.subtitle!!)!)
+            guard let annotation = annotationView.annotation,
+            let subtitle = annotation.subtitle, subtitle != "" else {
+                return
+            }
+            app.openURL(URL(string: subtitle!)!)
         }
     }
     

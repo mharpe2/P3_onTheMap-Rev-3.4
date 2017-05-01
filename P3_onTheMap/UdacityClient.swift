@@ -65,12 +65,7 @@ open class UdacityClient: NSObject {
                 completionHandler(false, error!.localizedDescription)
                 return
             }
-//            if error != nil {
-//                print("Could not complete the request \(String(describing: error))")
-//                
-//                return
-//            }
-            
+
             /* 5A. Parse the data */
             let range = Range(5..<data.count)
             let newData = data.subdata(in: range)
@@ -248,7 +243,7 @@ open class UdacityClient: NSObject {
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             
             guard let data = data, error == nil else {
-                print("Error:\(String(describing: error)))")
+                //print("Error:\(String(describing: error)))")
                 return
             }
             
